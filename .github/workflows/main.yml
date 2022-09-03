@@ -50,13 +50,19 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           
       - name: Upload to S3
-        run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://$S3_BUCKET_NAME/$PROJECT_NAME/$GITHUB_SHA.zip
-        working-directory: ${{env.working-directory}}
-        
-      - name: Code Deploy
-        run: 
-          aws deploy create-deployment \
-          --deployment-config-name CodeDeployDefault.AllAtOnce \
-          --application-name ${{ env.CODE_DEPLOY_APPLICATION_NAME }} \
-          --deployment-group-name ${{ env.CODE_DEPLOY_DEPLOYMENT_GROUP_NAME }} \
-          --s3-location bucket=$S3_BUCKET_NAME,bundleType=zip,key=$GITHUB_SHA.zip
+        run: aws s3 cp --region ap-northeast-2 ./homecoming.zip s3://$S3_BUCKET_NAME/
+
+
+
+    # Deploy
+      - name: Deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          aws deploy create-deployment 
+          --application-name testapp
+          --deployment-group-name homecoming-group
+          --file-exists-behavior OVERWRITE 
+          --s3-location bucket=dkdlcka,bundleType=zip,key=homecoming.zip
+          --region ap-northeast-2
