@@ -10,11 +10,11 @@ permissions:
     contents: read
 
 env:
-  S3_BUCKET_NAME: dkdlcka
-  PROJECT_NAME: action_codedeploy
+  BUCKET_NAME: dkdlcka
+  PROJECT_NAME: homecomingday
   RESOURCE_PATH: ./src/main/resources/application.yaml
-  CODE_DEPLOY_APPLICATION_NAME: testapp
-  CODE_DEPLOY_DEPLOYMENT_GROUP_NAME: homecoming-deploy
+  CODE_DEPLOY_APP_NAME: testapp
+  DEPLOY_DEPLOYMENT_GROUP_NAME: homecoming-deploy
 
 jobs:
   build:
@@ -70,15 +70,11 @@ jobs:
       - name: Upload to S3
         run: aws s3 cp --region ap-northeast-2 ./homecoming.zip s3://$S3_BUCKET_NAME/
         
-     # Deploy
-      - name: Deploy
+
+
+# s3에 업로드한 파일 code Deploy에서 배포 요청
+      - name: Code Deploy
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        run: 
-          aws deploy create-deployment 
-          --application-name coinTalk[testapp] 
-          --deployment-group-name coinTalk-group[homecoming-group] 
-          --file-exists-behavior OVERWRITE 
-          --s3-location bucket=cointalk-deploy[dkdlcka],bundleType=zip,key=coinTalk.zip[homecoming.zip] 
-          --region ap-northeast-2
+        run: aws deploy create-deployment --application-name $CODE_DEPLOY_APP_NAME --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name $DEPLOYMENT_GROUP_NAME --s3-location bucket=$BUCKET_NAME,bundleType=zip,key=$PROJECT_NAME/$GITHUB_SHA.zip
