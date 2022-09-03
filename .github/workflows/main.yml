@@ -27,7 +27,6 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
-          
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
         shell: bash
@@ -55,7 +54,7 @@ jobs:
         working-directory: ${{env.working-directory}}
         
       - name: Code Deploy
-        run: | 
+        run: 
           aws deploy create-deployment \
           --deployment-config-name CodeDeployDefault.AllAtOnce \
           --application-name ${{ env.CODE_DEPLOY_APPLICATION_NAME }} \
