@@ -1,9 +1,10 @@
+name: coinTalk chatRoom server CI/CD
 on:
   push:
     branches:
       - main
 
-name: Deploy String boot to Amazon EC2
+
 env:
   PROJECT_NAME: test-deploy
   S3_BUCKET_NAME: dkdlcka
@@ -31,6 +32,24 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
         shell: bash
+        
+    # 디렉토리 생성
+      - name: Make Directory
+        run: mkdir -p deploy
+        
+    # Jar 파일 복사
+      - name: Copy Jar
+        run: cp ./build/libs/*.jar ./deploy
+      
+    # appspec.yml 파일 복사
+      - name: Copy appspec.yml
+        run: cp appspec.yml ./deploy
+
+
+    # script files 복사
+      - name: Copy script
+        run: cp ./scripts/*.sh ./deploy
+        
 
       - name: Make zip file
         run: zip -qq -r ./$GITHUB_SHA.zip .
@@ -44,7 +63,7 @@ jobs:
           aws-region: ${{secrets.AWS_REGION}}
 
       - name: Upload to S3 
-        run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://$S3_BUCKET_NAME/$GITHUB_SHA.zip
+        run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://homecome.zip s3://$S3_BUCKET_NAME/
          
       - name: Code Deploy
         run: | 
@@ -52,4 +71,4 @@ jobs:
           --deployment-config-name CodeDeployDefault.AllAtOnce \
           --application-name ${{ env.CODE_DEPLOY_APPLICATION_NAME }} \
           --deployment-group-name ${{ env.CODE_DEPLOY_DEPLOYMENT_GROUP_NAME }} \
-          --s3-location bucket=$S3_BUCKET_NAME,bundleType=zip,key=$GITHUB_SHA.zip
+          --s3-location bucket=$S3_BUCKET_NAME,bundleType=zip,key=homecome.zip
