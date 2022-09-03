@@ -1,80 +1,57 @@
-name : test-deploy
+name: test-deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "master" ]
 
-permissions: 
-    contents: read
-
-env:
-  BUCKET_NAME: dkdlcka
-  PROJECT_NAME: homecomingday
-  RESOURCE_PATH: ./src/main/resources/application.yaml
-  CODE_DEPLOY_APP_NAME: testapp
-  DEPLOY_DEPLOYMENT_GROUP_NAME: homecoming-deploy
+permissions:
+  contents: read
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
+    env: 
+      working-directory: ./
+      S3_BUCKET_NAME: springboot-webservice-deployd
+      PROJECT_NAME: test-deploy
+      
     steps:
-      - uses: actions/checkout@v2
-      - name: Checkout
+      - name: Cheakout
         uses: actions/checkout@v3
-
+        
       - name: Set up JDK 11
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
-          java-version: 11
-          distribution : "temurin"
-          
-
-
+          java-version: '11'
+          distribution: 'temurin'
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
         shell: bash
-        working-directory : ${{env.working-directory}}
-
+        working-directory: ${{env.working-directory}}
+        
       - name: Build with Gradle
-        run: ./gradlew clean build
-
-    # 디렉토리 생성
-      - name: Make Directory
-        run: mkdir -p deploy
-        
-    # Jar 파일 복사
-      - name: Copy Jar
-        run: cp ./build/libs/*.jar ./deploy
-      
-    # appspec.yml 파일 복사
-      - name: Copy appspec.yml
-        run: cp appspec.yml ./deploy
-        
-
-
-      - name: Make zip file
-        run: zip -r ./homecoming.zip ./deploy
+        run: ./gradlew bootjar
         shell: bash
+        working-directory: ${{env.working-directory}}
+        
+      - name: Make zip file
+        run: zip -r ./$GITHUB_SHA.zip .
+        shell: bash
+        working-directory: ${{env.working-directory}}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID}}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
           
       - name: Upload to S3
-        run: aws s3 cp --region ap-northeast-2 ./homecoming.zip s3://$BUCKET_NAME/
+        run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://$S3_BUCKET_NAME/$PROJECT_NAME/$GITHUB_SHA.zip
+        working-directory: ${{env.working-directory}}
         
-
-
-# s3에 업로드한 파일 code Deploy에서 배포 요청
       - name: Code Deploy
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        run: aws deploy create-deployment --application-name $CODE_DEPLOY_APP_NAME --deployment-config-name CodeDeployDefault.OneAtATime --deployment-group-name $DEPLOYMENT_GROUP_NAME --s3-location bucket=$BUCKET_NAME,bundleType=zip,key=$PROJECT_NAME/$GITHUB_SHA.zip
+        run: aws deploy create-deployment --application-name testapp --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name dev --s3-location bucket=$S3_BUCKET_NAME,bundleType=zip,key=$PROJECT_NAME/$GITHUB_SHA.zip
+        working-directory: ${{env.working-directory}}
