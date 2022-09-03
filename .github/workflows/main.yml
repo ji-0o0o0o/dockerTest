@@ -2,9 +2,9 @@ name: test-deploy
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -14,8 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     env: 
       working-directory: ./
-      S3_BUCKET_NAME: springboot-webservice-deployd
-      PROJECT_NAME: test-deploy
+      S3_BUCKET_NAME: dkdlcka
+      CODE_DEPLOY_APPLICATION_NAME: testapp
+      CODE_DEPLOY_DEPLOYMENT_GROUP_NAME: homecoming-group
       
     steps:
       - name: Cheakout
@@ -26,6 +27,7 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
+          
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
         shell: bash
@@ -53,5 +55,9 @@ jobs:
         working-directory: ${{env.working-directory}}
         
       - name: Code Deploy
-        run: aws deploy create-deployment --application-name testapp --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name dev --s3-location bucket=$S3_BUCKET_NAME,bundleType=zip,key=$PROJECT_NAME/$GITHUB_SHA.zip
-        working-directory: ${{env.working-directory}}
+        run: | 
+          aws deploy create-deployment \
+          --deployment-config-name CodeDeployDefault.AllAtOnce \
+          --application-name ${{ env.CODE_DEPLOY_APPLICATION_NAME }} \
+          --deployment-group-name ${{ env.CODE_DEPLOY_DEPLOYMENT_GROUP_NAME }} \
+          --s3-location bucket=$S3_BUCKET_NAME,bundleType=zip,key=$GITHUB_SHA.zip
