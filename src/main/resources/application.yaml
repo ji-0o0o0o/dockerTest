@@ -2,4 +2,4 @@
 # application.yml
 
 logging-module:
-  version: 0.0.892
+  version: 0.0.123
